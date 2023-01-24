@@ -1,3 +1,5 @@
+    ***************trigger_handler_class****************
+    
     public class campaign_leadtrigger {
          public static void campaignLeadweb(List<Lead> campLeadList ){
              List<Task> Tasklist=new List<Task>();
@@ -35,3 +37,10 @@
     }
     
     
+    
+    ------------------------------------------------------------------------------------------------------------------
+    ############## trigger##############################
+    
+    trigger campaginsLeadwebtrigger on Lead (after insert) {
+    campaign_leadtrigger.campaignLeadweb(trigger.new);
+    }
