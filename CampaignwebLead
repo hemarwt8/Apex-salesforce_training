@@ -1,0 +1,37 @@
+    public class campaign_leadtrigger {
+         public static void campaignLeadweb(List<Lead> campLeadList ){
+             List<Task> Tasklist=new List<Task>();
+        List<Lead> campweb = new List<Lead>(); 
+             //List<Campaign>camplist=new List<Campaign>(); 
+             Id campaignid=[select id,name from campaign where name='sunbun concert'].id;
+             List<CampaignMember>campmem=new List<CampaignMember>();
+             for(Lead ld:campLeadList){
+                 if(ld.LeadSource=='web'){
+                     if(campaignId!=null){
+                         campaignmember capm=new campaignmember();
+                         capm.campaignid=campaignid;
+                         capm.Leadid=ld.id;
+                         capm.Status='TT';
+                         campmem.add(capm);
+                         
+                         
+                         
+    }
+                    
+                 }
+                 
+    }insert campmem;
+         
+        Task tk=new Task();{
+            tk.Subject='web Lead';
+            tk.ActivityDate=date.today()+10;
+            tk.Status='not Started';
+            tk.WhoId = trigger.new[0].Id;
+            Tasklist.add(tk);
+    }
+    
+        insert Tasklist;
+         }
+    }
+    
+    
