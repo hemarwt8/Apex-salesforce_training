@@ -1,0 +1,78 @@
+public class convertlead_future {
+   // @future
+    public void convertLeadfuture(list<Lead> leadlist,map<id,Lead> oldmap) {
+          list<database.LeadConvert> leadcon=new list<database.LeadConvert>();
+        map<id,String> convertLeads=new map<id,String>();
+          list<id> lead_id=new list<id>();
+        for(Lead lobj:leadlist){
+            if((lobj.convertlead__c==true && oldmap==null) ||(lobj.convertlead__c==true && oldmap.get(lobj.id).convertlead__c!=lobj.convertlead__c )){
+                database.LeadConvert lc=new database.LeadConvert();
+                lc.setLeadId(lobj.id);
+                lc.setDoNotCreateOpportunity(false);
+                Leadstatus convertstatus=[select Id,MasterLabel from Leadstatus where IsConverted=true limit 1];
+                lc.setConvertedStatus(convertstatus.MasterLabel);
+                leadcon.add(lc);
+                lead_id.add(lobj.id);
+                //futuremethod_Leadconvert.leadidonacc(lead_id);
+            }
+        }
+        //database.convertLead(leadcon);
+        //system.debug('lead_id'+lead_id);
+        List<database.LeadConvertResult> result= database.convertLead(leadcon);
+            for(database.LeadConvertResult res:result)
+            {
+                convertLeads.put(res.getLeadId(),res.getAccountId()+'-'+res.getContactId());
+                Leadidtoaccon(convertLeads);
+            }           
+}
+  @future
+    public static void Leadidtoaccon(Map<Id,String> mapleadconverts) {
+        
+        List<Account> acclst = new List<Account>();
+        List<Contact> conlst = new List<Contact>();
+        List<String> mapstring=new List<String>();
+   		for (Id leadId : mapleadconverts.keySet()) {
+            
+           // Id LeadId = leadId;
+            Id LdId = leadId;
+             mapstring = mapleadconverts.get(leadId).split('-');
+            //mapstring = leadconvertmap.values().split(':');
+            system.debug(' mapstring====='+ mapstring);
+            Id AccId = mapstring[0];
+            Id CId = mapstring[1];
+           // Id AccId = mapleadconverts.get('AccountId');
+            //Id CId = mapleadconverts.get('ContactId');
+              System.debug('String' + mapstring);
+            System.debug('Lead Id: ' + LdId + ' Account Id: ' + AccId  + ' Contact Id: ' + CId);
+            
+            Account acc = new Account();
+            
+            acc.id=AccId;
+            acc.Leadid__c = LdId;
+            acclst.add(acc);
+            
+            Contact con = new Contact();
+            con.id=CId;
+            con.Leadid__c = LdId;
+            conlst.add(con);
+            
+        }
+        update acclst;
+        update conlst;
+    }
+}
+
+
+
+    ******************************trigger****************
+    
+    trigger convertleadtrigger_future on Lead (after insert,after update) {
+    if(trigger.isafter && trigger.isinsert){
+       convertlead_future obj=new convertlead_future();
+        obj.convertLeadfuture(trigger.new,null);
+    }
+    if(trigger.isafter && trigger.isupdate){
+       convertlead_future obj=new convertlead_future();
+        obj.convertLeadfuture(trigger.new,trigger.oldmap);
+    }
+}
