@@ -1,0 +1,48 @@
+***********************Queueable class1*************************************
+public class queuabledefaultAcc_apexHandler implements Queueable {
+  Id Accountid;
+    public void queaccount(){
+         Account a = new Account(Name='Default Account');
+      insert a;
+        Accountid=a.Id;
+       
+    }
+ 
+    public void execute(QueueableContext context) {
+        queaccount();
+        List<Account> acclst =[select id,name from account where Id=:Accountid];
+        List<Contact> conlst=new List<Contact>();
+        for(Account acc:acclst){
+            contact con=new Contact();
+            Con.LastName='default customer';
+            con.AccountId= acc.id;
+            conlst.add(con);
+        }
+        insert conlst;
+        system.enqueueJob( new queableoppacc(Accountid));
+    } 
+    
+}
+
+************************Queueable class2*************************************
+
+public class queableoppacc implements Queueable {
+      Id Accountid;
+    
+        public queableoppacc(id acc){
+            Accountid=acc;
+        }
+ 
+public void execute(QueueableContext context) {
+              List<Account> aclst =[select id,name from account where Id=:Accountid];
+    List<opportunity> opplst=new List<opportunity>();
+    for(Account ac:aclst){
+opportunity oop=new opportunity();
+    oop.AccountId=ac.id;
+        oop.Name='default opportunity';
+        oop.CloseDate=System.today()+5;
+        oop.StageName='Prospecting ';
+    opplst.add(oop);
+    }insert opplst;
+}
+}
