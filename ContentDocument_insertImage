@@ -1,0 +1,48 @@
+public class contentdocument_imageHandler {
+    public static void imageoncontact(List<ContentVersion> contentVersions){
+ list<ContentDistribution> distributionsToInsert = new List<ContentDistribution>();
+        string urlname;
+        id ContentDocument;
+        list<id> conid=new list<id>();
+        for(ContentVersion objContentVersion : contentVersions){
+            //if image uploaded then only create public link
+            if(objContentVersion.FileType.toLowerCase()=='jpg'){
+                ContentDocument=objContentVersion.ContentDocumentId;
+                ContentDistribution newDist = new ContentDistribution();
+                newDist.ContentVersionId = objContentVersion.Id;
+                newDist.Name = 'External Link';
+                newDist.PreferencesNotifyOnVisit = false;
+                newDist.PreferencesAllowViewInBrowser = true;
+                newDist.PreferencesAllowOriginalDownload=true;
+                distributionsToInsert.add(newDist);
+            }
+        }
+        if(!distributionsToInsert.isEmpty())
+        {
+            insert distributionsToInsert;
+            urlname=distributionsToInsert[0].DistributionPublicUrl;
+        }
+         list<ContentDistribution> distributionsurl =[select id, DistributionPublicUrl from ContentDistribution where id=:distributionsToInsert[0].id];
+      list<contentdocumentlink> linklist=[select id,LinkedEntityId,contentdocumentid from contentdocumentlink where contentdocumentid=:ContentDocument];
+        for(ContentDistribution obj:distributionsurl){
+            urlname=obj.DistributionPublicUrl;
+        } for(contentdocumentlink linkobj:linklist){
+           conid.add(linkobj.LinkedEntityId);
+        }
+      list<Contact> clist=[select id,lastname,Profile_image__c from contact where id=:conid];
+     list<Contact> updatelist=new list<Contact>();
+        for(Contact cobj:clist){
+            cobj.Profile_image__c= urlname;
+            system.debug('cobj'+cobj);
+            updatelist.add(cobj);
+        }
+        if(!updatelist.isEmpty()){
+            database.update(updatelist);
+        }
+    }
+}
+**************trigger*******************
+trigger contentversion_trigger on ContentVersion (after insert) {
+    contentdocument_imageHandler.imageoncontact(Trigger.new);
+}
+  
