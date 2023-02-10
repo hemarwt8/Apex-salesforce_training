@@ -1,0 +1,54 @@
+public class contentdocument_imageHandler {
+    public static void imageoncontact(List<ContentVersion> contentVersions){
+          String url = '';
+        Id DocumentId;
+        Id ContentVersionId;
+        List<ContentDistribution> distList = new List<ContentDistribution>();
+        for(ContentVersion cv : contentVersions)
+        {
+            url = cv.contentUrl;
+            DocumentId = cv.ContentDocumentId;
+            ContentVersionId = cv.Id;
+            
+        System.debug('Document Id===>' + DocumentId);
+         
+        List<contentDocumentLink> linkList = [SELECT Id, LinkedEntityId, ContentDocumentId 
+                                              FROM ContentDocumentLink 
+                                              WHERE ContentDocumentId = :DocumentId];
+        System.debug('LinkedEntity===>' + linkList);
+         String contentDocumentUrl =  system.URL.getSalesforceBaseUrl().toExternalForm() + '/sfc/servlet.shepherd/version/renditionDownload?rendition=THUMB720BY480&versionId=' + ContentVersionId;
+           System.debug('Content Document URL =====>' + contentDocumentUrl);
+        
+        List<Id> linkId = new List<Id>() ;
+        
+        String ContentDocumentLinkk;
+        
+        for(contentDocumentLink conLink : linkList)
+        {
+            linkId.add(conLink.LinkedEntityId);
+            ContentDocumentLinkk = conLink.Id;            
+        }
+        System.debug('Content Document Link =====>' + ContentDocumentLinkk);
+        
+        if (linkId != null) {
+            List<Contact> conList = [SELECT Id, Name, Profile_image__c 
+                                     FROM Contact 
+                                     WHERE Id = :linkId];
+            System.debug('Contact===>' + conList);
+            List<Contact> contoUp = new List<Contact>();
+            
+            for(Contact con : conList)
+            {
+                con.Profile_image__c = contentDocumentUrl;
+                contoUp.add(con);
+            }
+            update contoUp;
+        }
+    }
+}
+}
+**********trigger*******
+trigger contentversion_trigger on ContentVersion (after insert) {
+    contentdocument_imageHandler.imageoncontact(Trigger.new);
+}
+       
