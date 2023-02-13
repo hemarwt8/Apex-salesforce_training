@@ -1,0 +1,35 @@
+4.Write a trigger to display the count of related contacts on the Account object.
+         —-->public class oppAmountexceed_hander{
+public static void countContacts(List<Contact> conList)   {
+        List<Account> accList = new List<Account>();
+    	List<Account> accUpdatedlist = new List<Account>();
+        
+        try{
+            for (Contact con : conList)  {
+                system.debug('Account Id in Contact ===> '+con.AccountId);
+                accList = [SELECT Id,Name,Number_Of_Contacts__c, (SELECT Id, Name FROM Contacts) 
+                               FROM Account WHERE Id =: con.AccountId];
+               
+            }
+            for (Account acc : accList)  {
+                acc.Number_of_Contacts__c = acc.Contacts.size() ;
+                accUpdatedlist.add(acc);
+            }
+            if(!accUpdatedlist.isEmpty()){
+              update accUpdatedlist;
+            }
+        }
+        catch(Exception ex){
+          system.debug('Error Occur ===' +ex.getmessage());
+        }
+    }
+}
+*******Trigger-
+trigger accnamettrigger on Contact (after insert, after update, after delete) {
+    if(Trigger.isAfter && Trigger.isInsert){
+        oppAmountexceed_hander.countContacts(trigger.new); }
+    if(Trigger.isAfter && Trigger.isUpdate)  {
+        oppAmountexceed_hander.countContacts(trigger.new);    }
+    if(Trigger.isAfter && Trigger.isDelete)    {
+        oppAmountexceed_hander.countContacts(trigger.old);    }       
+} 
