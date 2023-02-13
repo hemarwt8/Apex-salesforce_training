@@ -1,0 +1,42 @@
+5. Write a trigger to display the count of related Opportunities on the Account object.
+—-->public class oppAmountexceed_hander{
+  public static void countOpportunitiesonAcc(List<Opportunity> opplist){
+        Set<Id> accountIds = new Set<Id>();
+        try{
+            for(Opportunity opportunity : opplist) {
+                accountIds.add(opportunity.AccountId);
+            }
+            //Getting aggregate list using aggregate query
+            List<AggregateResult> aggregateResults = [SELECT AccountId, COUNT(Id) countId 
+                                                      FROM Opportunity WHERE AccountId IN :accountIds GROUP BY AccountId];
+            List<Account> accUpdate = new List<Account>();
+            for(AggregateResult result : aggregateResults) {
+                Account account = new Account(
+                    Id = (Id)result.get('AccountId'),
+                        Number_Of_Opportunities__c = (Integer)result.get('countId')
+                );
+
+                accUpdate.add(account);
+            }
+            if(!accUpdate.isEmpty()){
+              update accUpdate;
+            }
+        }
+        catch(Exception ex){
+            system.debug('Error Occur ====>' +ex.getmessage());
+         }
+    }
+}
+******Trigger-
+trigger oppproduct_trigger on Opportunity (after insert, after delete, after update) {
+    if(Trigger.isAfter && Trigger.isInsert){
+        oppAmountexceed_hander.countOpportunitiesonAcc(trigger.new);
+ }
+    if(Trigger.isAfter && Trigger.isUpdate)  {
+        oppAmountexceed_hander.countOpportunitiesonAcc(trigger.new);  
+  }
+        if(Trigger.isAfter && Trigger.isDelete)    {
+        oppAmountexceed_hander.countOpportunitiesonAcc(trigger.old); 
+   }
+}
+
