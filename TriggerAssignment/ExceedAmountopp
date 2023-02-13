@@ -1,0 +1,16 @@
+ 1.Write a trigger that will prevent adding opportunity related to one account if the amount of opportunity exceeds 100000 per day.
+—->public class oppAmountexceed_hander {
+  public static void opp_method(List<opportunity>opplst){
+        List<opportunity> newopplst=new List<opportunity>();
+        for(opportunity objopp:opplst)
+            if(objopp.Amount>100000){
+                objopp.addError('limit exceeded');
+            }
+	}
+}
+
+************trigger*************
+trigger oppproduct_trigger on Opportunity (before insert,before update) {
+    oppAmountexceed_hander.opp_method(trigger.new);
+
+}
