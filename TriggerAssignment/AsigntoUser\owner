@@ -1,0 +1,22 @@
+8.	Create a trigger that when an account is created with industry as ‘Education’ then assign it to the owner/user ‘Of your Own Choice’ 
+—->public class emailAlertonAcc_handler {
+ public static void accIndustry_method(List<Account> newAccountList){
+               try{
+            user uname=[select id,name, Username from user where Username='rwthema8123@gmail.com'];
+            for(Account aobj:newAccountList){
+                if(aobj.Industry!=null && aobj.Industry=='Education'){
+                    aobj.OwnerId=uname.id;
+                }
+            }
+        }
+        catch(exception error){
+            system.debug('error messages'+error.getMessage()+'getLineNumber()'+error.getLineNumber());
+        }
+    }
+}
+*******Trigger-
+trigger accounttrigger on Account (before Insert) {
+ if(trigger.isBefore && trigger.isInsert){
+           emailAlertonAcc_handler.accIndustry_method(trigger.new);
+        }
+     }
