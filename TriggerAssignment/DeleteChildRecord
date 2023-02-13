@@ -1,0 +1,27 @@
+6.	Write a trigger on the deletion of parent records child records must get deleted. (in lookup relationship).
+     —--->public class Deletechildrecord_handler {
+ // Ans6-
+    Public static void deleteChildRecord(List<Lead> ldList){
+        try{
+            set<id> idLead=new set<id>();
+            for(Lead ld_list:ldList){
+                idLead.add(ld_list.id);
+            }
+            list<Leadsurvey__c> ldservey=[select id, Name,Lead__c from Leadsurvey__c where Lead__c=:idLead];
+            system.debug('ldservey'+ldservey);
+            if(ldservey.size()>0){
+                delete(ldservey);
+            }
+        }
+        catch(exception error){
+            system.debug('error messages'+error.getMessage()+'error line no'+error.getLineNumber());
+        }
+    }
+
+}
+******Trigger-
+trigger DeletechildRecord_Trigger on Lead (before delete) {
+       if(trigger.isbefore && trigger.isdelete){
+        Deletechildrecord_handler.deleteChildRecord(trigger.old);
+}  
+} 
