@@ -1,0 +1,32 @@
+2.Write a trigger to update the city field in all the related opportunities when the city field is updated in the Account
+ —-->public class oppAmountexceed_hander {
+
+ public static void updatecity_method(List<account> nwlst,map<id,account> oldmap){
+        try{
+            set<id> accid=new set<id>();
+            for(account accobj:nwlst){
+                if(accobj.AccCity__c!=null && accobj.AccCity__c!=oldmap.get(accobj.id).AccCity__c){
+                    accid.add(accobj.id);
+                }
+            }
+            list<opportunity>updateoppcity=new list<opportunity>();
+            list<opportunity>oplist=[select id,opprCity__c,Accountid,account.AccCity__c from opportunity where accountid=:accid];
+            for(opportunity opobj:oplist){
+				opobj.opprCity__c=opobj.account.AccCity__c;
+                updateoppcity.add(opobj);
+            }
+            if(updateoppcity.size()>0){
+                update (updateoppcity);
+                
+            }
+        }
+        catch(exception ex){
+	system.debug('error message'+ex.getMessage()+ex.getLineNumber());
+        }
+    }
+}
+
+****Trigger-
+trigger accounttrigger on Account (after insert,after update) {
+    oppAmountexceed_hander.updatecity_method(trigger.new,trigger.oldmap);
+}
