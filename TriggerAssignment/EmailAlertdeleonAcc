@@ -1,0 +1,23 @@
+ 7. Create a trigger that will send an Email alert on the deletion of the account.  
+ —-->public class emailAlertonAcc_handler {
+    public static void emailAlert_method(List<Account> aclst){
+        Messaging.reserveSingleEmailCapacity(aclst.size());
+        List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+        try{
+            for (Account acct : aclst) {
+                Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+                email.setToAddresses(new String[] {'hema.rawat@hicglobalsolutions.com'}  );
+                email.setSubject('Deleted Account Alert');
+                email.setPlainTextBody('This message is to alert you that the account named ' + acct.Name       + ' has been deleted.');
+                emails.add(email);
+            }
+            Messaging.sendEmail(emails);
+        }
+        catch(Exception ex){
+            system.debug('Error Occur ==> ' +ex.getmessage());
+        }
+    }
+}
+*******trigger*********
+trigger accounttrigger on Account (before update,after delete) {    emailAlertonAcc_handler.emailalert_method(trigger.old);
+}
