@@ -1,0 +1,23 @@
+3.Write a trigger that when an account is updated with a new Phone number then its old phone number should be stored in a field name ‘Old Contact Number’.
+ —-->public class oppAmountexceed_hander {
+public static void OldphnNumber_Method(List<Account> newAccounts, Map<Id, Account> oldAccountMap) {
+    try{
+        for (Account ac : newAccounts) {
+            Account oldAccount = oldAccountMap.get(ac.Id);
+            if (ac.Phone != oldAccount.Phone) {
+                ac.Old_Contact_Number__c = oldAccount.Phone;
+            }
+        }
+      }
+     catch(Exception ex){
+        system.debug('Error Occur ==' +ex.getmessage());
+      }
+    }
+}
+
+******Trigger-
+trigger accounttrigger on Account (before update) {
+if(trigger.isbefore && trigger.isupdate){
+         oppAmountexceed_hander.OldphnNumber_Method(Trigger.new, Trigger.oldMap);
+    }
+}
