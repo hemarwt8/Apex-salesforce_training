@@ -1,0 +1,31 @@
+ public class CustomSetting_LeadHandler {
+ public static void CustomSetting_method(list<Lead> ldlist){
+        list<Lead__c> leadscorerecord= Lead__c.getall().values();
+        system.debug('leadscorerecord'+leadscorerecord);
+        map<String, Decimal> nationality=new map<String, Decimal>();
+        map<String, Decimal> budget=new map<String, Decimal>();
+         map<String, Decimal> startingdate=new map<String, Decimal>();
+        for(Lead__c ldscore:leadscorerecord){
+            if(ldscore.Nationality__c!=null){
+                nationality.put(ldscore.Nationality__c,ldscore.Nationality_Score__c);
+            }
+            if(ldscore.Budget__c!=null){
+                budget.put(ldscore.Budget__c,ldscore.Budget_Score__c);
+            }
+            if(ldscore.Starting_Date__c!=null){
+                startingdate.put(ldscore.Starting_Date__c,ldscore.Starting_Date_Score__c);
+            }
+        }
+        for(Lead lobj:ldlist){
+            if((lobj.Nationality__c!=null && nationality.containsKey(lobj.Nationality__c)) ||(lobj.Budget__c!=null && budget.containsKey(lobj.Budget__c) )||(lobj.Starting_Date__c!=null && startingdate.containsKey(lobj.Starting_Date__c) ) ){
+                lobj.Score__c=(nationality.get(lobj.Nationality__c)*0.4)+(budget.get(lobj.Budget__c)*0.35)+(startingdate.get(lobj.Starting_Date__c)*0.25);
+            }
+        }
+    }
+}
+**********Trigger-
+trigger CustomSetting_Trigger on Lead (before insert,before update) {
+    if(trigger.isbefore && (trigger.isinsert || trigger.isupdate)){
+       CustomSetting_LeadHandler.CustomSetting_method(trigger.new);        
+    }
+}
