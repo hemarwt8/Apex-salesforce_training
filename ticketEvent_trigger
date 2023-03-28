@@ -1,0 +1,169 @@
+public class ConcertEvent_class {
+    public static void concertevent(List<Ticket__c> ticketlist){
+        Set<Id> ConcertIds = new Set<Id>();//store concert Id
+        Set<Id> ContactIds = new Set<Id>();//store contact Id
+        Map<Id, Concert__c> Concertmap = new Map<Id, Concert__c>();
+        Map<Id, Contact> Contactmap = new Map<Id, Contact>();
+        if(Schema.SObjectType.Ticket__c.isAccessible()){ //checking if Ticket_c object is accessible by user
+            try{
+                //getting ids of concert & contact from ticket
+                for(Ticket__c tclst: ticketlist){
+                    ConcertIds.add(tclst.Concert__c);
+                    ContactIds.add(tclst.Customer__c);
+                }
+                //inserting concert in map
+                if(!ConcertIds.isEmpty()){
+                    for(Concert__c concerts: [SELECT Id, Date__c, Venue__c, Artist__c, Name FROM Concert__c WHERE Id IN: ConcertIds]){
+                        Concertmap.put(concerts.Id, concerts);
+                    }
+                }
+                //inserting contact in map
+                if(!ContactIds.isEmpty()){
+                    for(Contact con: [SELECT Id, Name FROM Contact WHERE Id IN: ContactIds]){
+                        Contactmap.put(con.Id, con);
+                    }
+                }
+                //Creating event and giving description dynamically
+                List<Event> Eventlist = new List<Event>();
+                for(Ticket__c tc: ticketlist){
+                    Concert__c concert = Concertmap.get(tc.Concert__c);
+                    Contact contact = Contactmap.get(tc.Customer__c);
+                    if(concert != null && contact != null){
+                        Event evt = new Event();
+                        evt.Subject = concert.Name;
+                        evt.StartDateTime = concert.Date__c;
+                        evt.EndDateTime = concert.Date__c.addHours(5);
+                        evt.WhoId = contact.id;
+                        evt.WhatId = concert.id;
+                        evt.Location = concert.Venue__c;
+                        evt.Description = 'Hi ' +contact.Name +'\n Greeting! \n' + concert.Name + ' at '+concert.Venue__c+
+                                            ' on '+concert.Date__c +'\n Please Visit! \n' + 'Happy Event!' ;
+                        Eventlist.add(evt);
+                     }
+                }
+                //inserting event
+                if(!Eventlist.isEmpty()){
+                    insert Eventlist;
+                    system.debug('Event Created ==> ' +Eventlist);
+                }
+            }
+            catch(Exception ex){
+                system.debug('Error Occur == ' +ex.getMessage() + ex.getLineNumber() );
+            }
+        }
+    }
+}
+
+*******************************trigger****************************
+trigger ConcertEvents_trigger on Ticket__c (after insert) {
+    if(trigger.isafter && trigger.isinsert){
+    ConcertEvent_class.concertevent(trigger.new);
+}
+    
+}
+
+
+//2-->
+public class ConcertEvent2_class {
+    
+    
+    public static void concertevent(List<contact> conlist ){
+        
+        //Create a list of all updating contact IDs
+        set<Id> contactIds = new set<Id>();
+        for(Contact con : conlist) {
+            contactIds.add(con.Id);
+        }
+        system.debug('contactids++++>>>'  + contactids);
+        //Create a map of all updating contact IDs and their related event IDs
+        //Map<Id, List<Event>> contactEvents = new Map<Id, List<Event>>();
+        
+        List<Event> eventlist=[SELECT WhoId,subject, who.Name,Location, WhatId,StartDateTime, Description FROM Event WHERE WhoId IN :contactIds AND Who.Recordtype.Name='costomer'];
+        system.debug('eventlists++++>>>'  + eventlist);
+        //System.debug('Line 13: '+contactEvents.size()); // This will always be 0 because we aren't adding anything to contactEvents before this..
+        
+        //Update this list at the end.
+        List<Event> eventChanges = new List<Event>();
+        
+        for(Event ev : eventlist) {
+            
+            string nam=ev.who.Name;
+            ev.Description = 'Hi ' + nam+'\n Greeting! \n'+ ev.subject+  ' at '+ev.StartDateTime+
+                ' on '+ev.Location +'\n Please Visit! \n' + 'Happy Event!' ;
+            eventChanges.add(ev);
+        }
+        
+        system.debug('adddevents+=====>'  +eventChanges);
+        
+        update eventChanges;
+        system.debug('updatevents+=====>'  +eventChanges);
+    }
+}
+
+***************************trigger************************************
+trigger Concertevent_trigger2 on Contact (after update) {
+    if(trigger.isafter && trigger.isupdate){
+        ConcertEvent2_class.concertevent(trigger.new);
+        
+        
+    }
+}
+
+//3-->
+public class Concertevent3_class {
+    
+    public static void concertevent3(List<Concert__c> concertlist, Map<Id, Concert__c> newMap){
+        if(Schema.SObjectType.Concert__c.isUpdateable()){
+            try{
+                    //Storing concertids
+                	Set<Id> concertids = new Set<Id>();
+                    for(Concert__c ct:concertlist){
+                        concertids.add(ct.id);
+                    }
+                	system.debug('Map ==>' +newMap);
+                	 // Query for all the Ticket__c records related to the updated Concert__c records
+                    List<Ticket__c> ticketlist = [SELECT Id, Customer__c,Concert__c  FROM Ticket__c WHERE Concert__c IN :concertids];
+                    system.debug('Ticket =='+ticketlist);
+                    // getting event list to update from contact Ids
+                    List<Event> eventchanges = [SELECT Id, WhatId,Description, Subject, ActivityDate, StartDateTime, WhoId,Who.Name, What.Id,What.name
+                                                  FROM Event where WhatId =:concertids];
+                    system.debug('Event =='+eventchanges);
+                	List<Event> eventlist = new List<Event>();
+                	//iterating over eventlist to update description
+                	if(!eventchanges.isEmpty()){
+                        for(Event e :eventchanges){
+                            system.debug('InsideLoop');
+                            e.Subject = newMap.get(e.WhatId).Name;
+                            e.Location = newMap.get(e.WhatId).Venue__c;
+                            system.debug('Location==' +e.Location);
+                            e.StartDateTime = newMap.get(e.WhatId).Date__c;
+                            e.EndDateTime = newMap.get(e.WhatId).Date__c.addHours(2);
+                            e.Description = 'Hi ' + e.Who.Name +'\n Greeting! \n' + e.Subject + ' at '+e.Location+
+                                                ' on '+e.StartDateTime +'\n Please Visit! \n' + 'Happy Event!' ;
+                            eventlist.add(e);
+                            }
+                    }
+                		//Checking if eventlist is not empty then update
+                		system.debug('Update Event ='+eventlist);
+                        if(!eventlist.isEmpty()){
+                            database.update(eventlist);
+                        }
+                		system.debug('Update Event ='+eventlist);
+            }
+            catch(Exception ex){
+                system.debug('Error Occur ==> '+ex.getMessage());
+            }
+        }
+    }
+}
+****************************************trigger**********************************
+trigger Concertevent_trigger3 on Concert__c (after update) {
+    
+    if(trigger.isafter && trigger.isupdate){
+        for(Concert__c cobj:trigger.new){
+            if((cobj.Name!=trigger.oldmap.get(cobj.id).Name) || (cobj.Venue__c!=trigger.oldmap.get(cobj.id).Venue__c )||(cobj.Date__c!=trigger.oldmap.get(cobj.id).Date__c)){
+               Concertevent3_class.concertevent3(trigger.new,trigger.newmap);
+            } 
+        }
+    }
+}
