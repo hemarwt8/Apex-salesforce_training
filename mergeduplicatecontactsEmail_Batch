@@ -49,9 +49,7 @@ global class duplicatecontacts_batch implements Database.Batchable<sObject> , Da
     }
     // Custom logic to merge fields
     private String mergeFields(String fieldValue1, String fieldValue2) {
-        // Add your custom logic here to determine how to merge the fields
-        // For example, you can concatenate the fields, choose the non-empty field, etc.
-        // In this example, we simply choose the non-empty field
+
         return String.isNotBlank(fieldValue2) ? fieldValue2 : fieldValue1;
     }
 }
