@@ -1,0 +1,58 @@
+global class duplicatecontacts_batch implements Database.Batchable<sObject> , Database.Stateful{
+    global Database.QueryLocator start(Database.BatchableContext context) {
+        // Query to find Contacts with duplicate Email fields
+        String query = 'SELECT id, firstname,lastname ,phone,Email FROM Contact WHERE Email != null limit 100 ';
+          system.debug('query' +query);
+        return Database.getQueryLocator(query);
+       
+    }
+    global void execute(Database.BatchableContext context, List<Contact> scope) {
+        // Map to store Contacts with duplicate Email fields
+        Map<String, List<Contact>> emailToContactsMap = new Map<String, List<Contact>>();
+        // Iterate through the scope and populate the map
+        for (Contact contact : scope) {
+            if (!emailToContactsMap.containsKey(contact.Email)) {
+                emailToContactsMap.put(contact.Email, new List<Contact>());
+            }
+            emailToContactsMap.get(contact.Email).add(contact);
+            system.debug('contact'+contact);
+        }
+        // Iterate through the map and merge fields of Contacts with duplicate Email fields
+        for (List<Contact> contacts : emailToContactsMap.values()) {
+            system.debug('contacts'+contacts);
+            if (contacts.size() > 1) {
+                // Keep the first Contact as the master record
+                Contact masterContact = contacts.remove(0);
+                system.debug('masterContact'+masterContact);
+                // Merge fields of the remaining Contacts into the master record
+                for (Contact contact : contacts) {
+                              system.debug('contact'+contact);
+                    // Merge fields using custom logic, update the master record
+                    masterContact.FirstName = mergeFields(masterContact.FirstName, contact.FirstName);
+                    //system.debug('FirstName'+FirstName);
+                    masterContact.LastName = mergeFields(masterContact.LastName, contact.LastName);
+                    //system.debug('LastName'+LastName);
+                    masterContact.Phone = mergeFields(masterContact.Phone, contact.Phone);
+                   // system.debug('Phone'+Phone);
+                    // Update the master record
+                    update masterContact;
+                     system.debug('masterContact'+masterContact);
+                    // Delete the duplicate Contact
+                    delete contact;
+                     system.debug('contact'+contact);
+                }
+            }
+        }
+    }
+    global void finish(Database.BatchableContext context) {
+        // Batch execution completed
+    }
+    // Custom logic to merge fields
+    private String mergeFields(String fieldValue1, String fieldValue2) {
+        // Add your custom logic here to determine how to merge the fields
+        // For example, you can concatenate the fields, choose the non-empty field, etc.
+        // In this example, we simply choose the non-empty field
+        return String.isNotBlank(fieldValue2) ? fieldValue2 : fieldValue1;
+    }
+}
+
