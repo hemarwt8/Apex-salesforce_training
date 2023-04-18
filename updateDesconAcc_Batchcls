@@ -1,0 +1,49 @@
+global class UpdateDescAcc_Batchcls implements Database.Batchable<SObject> {
+    global Database.QueryLocator start(Database.BatchableContext bc) {
+        return Database.getQueryLocator([
+            SELECT Id, Name, Description,
+                (SELECT Id, Email FROM Contacts)
+            FROM Account
+        ]);
+    }
+
+    global void execute(Database.BatchableContext bc, List<Account> scope) {
+        Map<Id, String> accountDescriptions = new Map<Id, String>();
+        for (Account acc : scope) {
+            system.debug('acc'+acc);
+            Set<String> domainNames = new Set<String>();
+            for (Contact con : acc.Contacts) {
+                system.debug('con'+con);
+                String domain = con.Email != null ? con.Email.split('@')[1] : null;
+                system.debug('domain'+domain);
+                if (domain != null) {
+                    domainNames.add(domain);
+                    system.debug('domainNames'+domainNames);
+                }
+            }
+            accountDescriptions.put(acc.Id, String.join(new List<String>(domainNames), ', '));
+        }
+        List<Account> accountsToUpdate = new List<Account>();
+        for (Account acc : scope) {
+            String description = accountDescriptions.get(acc.Id);
+            if (description != null && !description.equals(acc.Description)) {
+                acc.Description = description;
+                accountsToUpdate.add(acc);
+            }
+        }
+        update accountsToUpdate;
+         system.debug('accountsToUpdate'+accountsToUpdate);
+        
+    }
+
+    global void finish(Database.BatchableContext bc) {
+        // Optional finish logic
+    }
+}
+
+
+*******************************Excute batch******************************************
+
+
+UpdateDescAcc_Batchcls b=new UpdateDescAcc_Batchcls();
+database.executeBatch(b);
